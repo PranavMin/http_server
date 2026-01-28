@@ -2,6 +2,10 @@ from http import HTTPStatus
 
 
 class HttpResponse:
+    """
+    Builder for HTTPResponses
+    """
+
     # message status line
     # <protocol> <status-code> <reason-phrase>
     protocol: str = "HTTP/1.1"
@@ -51,12 +55,13 @@ class HttpResponse:
         responseString += f"{self.protocol} {self.status_code} {self.reason_phrase}\r\n"
 
         # Response Headers
-        responseString += (
-            "\r\n".join(
-                f"{key}: {value}" for key, value in self.response_headers.items()
+        if len(self.response_headers) > 0:
+            responseString += (
+                "\r\n".join(
+                    f"{key}: {value}" for key, value in self.response_headers.items()
+                )
+                + "\r\n"
             )
-            + "\r\n"
-        )
 
         if self.has_content:
             responseString += f"content-type: {self.content_type}\r\ncontent-length: {self.content_length}\r\n\r\n{self.content_body}"
@@ -64,44 +69,17 @@ class HttpResponse:
         return responseString
 
 
-class HTTPResponseHandler:
-    """
-    A class to handle HTTP responses.
-    """
+supported_methods = {"GET", "HEAD"}
 
-    def __init__(self, status_code: int, headers: dict[str, str], body: str = ""):
-        self.status_code = status_code
-        self.headers = headers if headers is not None else {}
-        self.body = body
 
-    def build_response(self) -> str:
-        status_line = f"HTTP/1.1 {self.status_code} {self._get_status_message()}\r\n"
-        headers = "".join(
-            [f"{key}: {value}\r\n" for key, value in self.headers.items()]
-        )
-        blank_line = "\r\n"
-        return f"{status_line}{headers}{blank_line}{self.body}"
-
-    def _get_status_message(self) -> str:
-        status_messages = {
-            200: "OK",
-            404: "Not Found",
-            500: "Internal Server Error",
-            # Add more status codes and messages as needed
-        }
-        return status_messages.get(self.status_code, "Unknown Status")
-
-    def __repr__(self) -> str:
-        """
-        Returns a developer-friendly str representation of the HTTPResponseHandler object.
-        """
-        return f"{self.__class__.__name__}(status_code={self.status_code}, headers={self.headers!r}, body={self.body!r})"
-
-    def __str__(self) -> str:
-        """
-        Returns a human-readable str representation of the HTTP response.
-        """
-        headers_str = "\n".join([f"  {k}: {v}" for k, v in self.headers.items()])
-        body_str = f"\nBody:\n{self.body}" if self.body else ""
-
-        return f"Status Code: {self.status_code}\nHeaders:\n{headers_str}{body_str}"
+def http_response_handler(http_request, get_file_contents):
+    response = HttpResponse().set_protocol("HTTP/1.1")
+    if http_request.method == "GET":
+        response.set_status(HTTPStatus.OK)
+        response.set_content("text/html", "Some friggin content, man!")
+    elif http_request.method == "HEAD":
+        pass
+    else:
+        response.set_status(HTTPStatus.METHOD_NOT_ALLOWED)
+        response.set_response_headers({"Allow": "GET, HEAD"})
+    return response
