@@ -1,5 +1,8 @@
 from pathlib import Path
 import socket
+
+from http_request_parser import HTTPRequest
+from http_response_handler import HttpResponse, http_response_handler
 # from http_request_parser import HTTPRequest
 # from http_response_handler import HTTPResponseHandler
 
@@ -32,7 +35,6 @@ class Server:
         print(f"starting http-server on {self.host}:{self.port}")
 
     def start_server(self):
-        numcalls = 1
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((self.host, self.port))
             while True:
@@ -50,23 +52,26 @@ class Server:
                         data += raw_data.decode("utf-8", errors="ignore")
                         print(f"data = {data}")
 
-                    # try:
-                    #     http_request = httprequest(data)
-                    #     print(f"parsed http request: {http_request}")
-                    #     # print("raw data: ")
-                    #     # print(data)
-                    #     # print("**********************************")
-                    #     # http_response_handler = httpresponsehandler(http_request)
-                    #
-                    # except valueerror as e:
-                    #     print(
-                    #         f"error parsing http request from {addr}: {e}\nraw data: {data!r}"
-                    #     )
-                    #     break
-                    self.send(
-                        client_sock, get_default_response(numcalls).encode("utf-8")
-                    )
-                    numcalls += 1
+                        try:
+                            http_request = HTTPRequest(data)
+                            response = http_response_handler(
+                                http_request, self.get_file_contents
+                            )
+                            print(f"trying to send {response}")
+                            self.send(client_sock, str(response).encode("utf-8"))
+                            # print(f"parsed http request: {http_request}")
+
+                            # print("raw data: ")
+                            # print(data)
+                            # print("**********************************")
+                            # http_response_handler = httpresponsehandler(http_request)
+
+                        except ValueError as e:
+                            print(
+                                f"error parsing http request from {client_addr}: {e}\nraw data: {data!r}"
+                            )
+                            break
+
                     print("connection closed.")
 
     def send(self, client_sock, message):
