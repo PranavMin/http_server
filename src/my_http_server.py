@@ -1,7 +1,7 @@
 from pathlib import Path
 import socket
-from http_request_parser import HTTPRequest
-from http_response_handler import HTTPResponseHandler
+# from http_request_parser import HTTPRequest
+# from http_response_handler import HTTPResponseHandler
 
 
 def get_default_response(numcalls):
@@ -27,8 +27,9 @@ class Server:
         self.host = host
         self.port = port
         self.servable_files = servable_files
-        self.http_response_handler = HTTPResponseHandler()
-        print(f"Starting http-server on {self.host}:{self.port}")
+
+        # self.http_response_handler = httpresponsehandler()
+        print(f"starting http-server on {self.host}:{self.port}")
 
     def start_server(self):
         numcalls = 1
@@ -36,28 +37,46 @@ class Server:
             server_socket.bind((self.host, self.port))
             while True:
                 server_socket.listen()
-                conn, addr = server_socket.accept()
-                with conn:
-                    print(f"Connected by {conn}, {addr}")
+                client_sock, client_addr = server_socket.accept()
+                with client_sock:
+                    print(f"connected by {client_sock}, {client_addr}")
+                    data = ""
                     while True:
-                        raw_data = conn.recv(1024)
+                        print("before recv")
+                        raw_data = client_sock.recv(1024)
+                        print("after recv")
                         if not raw_data:
                             break
-                        data = raw_data.decode("utf-8", errors="ignore")
+                        data += raw_data.decode("utf-8", errors="ignore")
+                        print(f"data = {data}")
 
-                        try:
-                            # print("Raw Data: ")
-                            # print(data)
-                            # print("**********************************")
-                            http_request = HTTPRequest(data)
-                            # http_response_handler = HTTPResponseHandler(http_request)
-                            print(f"Parsed HTTP Request: {http_request}")
+                    # try:
+                    #     http_request = httprequest(data)
+                    #     print(f"parsed http request: {http_request}")
+                    #     # print("raw data: ")
+                    #     # print(data)
+                    #     # print("**********************************")
+                    #     # http_response_handler = httpresponsehandler(http_request)
+                    #
+                    # except valueerror as e:
+                    #     print(
+                    #         f"error parsing http request from {addr}: {e}\nraw data: {data!r}"
+                    #     )
+                    #     break
+                    self.send(
+                        client_sock, get_default_response(numcalls).encode("utf-8")
+                    )
+                    numcalls += 1
+                    print("connection closed.")
 
-                        except ValueError as e:
-                            print(
-                                f"Error parsing HTTP request from {addr}: {e}\nRaw data: {data!r}"
-                            )
-                            break
-                        conn.sendall(get_default_response(numcalls).encode("utf-8"))
-                        numcalls += 1
-                    print("Connection closed.")
+    def send(self, client_sock, message):
+        client_sock.sendall(message)
+
+    def get_file_contents(self, path: Path):
+        if path == Path("/"):
+            return self.get_file_contents(Path("/index.html"))
+
+        if path in self.servable_files and path.exists():
+            return path.read_text()
+        else:
+            raise FileNotFoundError
