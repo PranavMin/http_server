@@ -1,5 +1,4 @@
 from http import HTTPStatus
-import re
 
 
 class HttpResponse:

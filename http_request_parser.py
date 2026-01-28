@@ -1,6 +1,9 @@
-class HTTPRequestParser:
+from types import WrapperDescriptorType
+
+
+class HTTPRequest:
     def __init__(self, raw_request: str):
-        self.raw_request = raw_request
+        self.raw_request: str = raw_request
         self.method = ""
         self.path = ""
         self.http_version = ""
@@ -11,8 +14,6 @@ class HTTPRequestParser:
 
     def parse_request(self):
         if not self.raw_request:
-            # An empty raw request is not a valid HTTP request.
-            # Given main.py now checks for empty raw_data, this might be redundant but good for robustness.
             return
 
         request_lines = self.raw_request.split("\r\n")
@@ -28,7 +29,9 @@ class HTTPRequestParser:
         if len(parts) != 3:
             # Malformed request line, e.g., "GET /" or just "GET"
             # Raise an error to indicate a parsing failure.
-            raise ValueError(f"Malformed HTTP request line: '{request_line}'. Expected 3 parts (method, path, version). Got {len(parts)}.")
+            raise ValueError(
+                f"Malformed HTTP request line: '{request_line}'. Expected 3 parts (method, path, version). Got {len(parts)}."
+            )
 
         self.method, self.path, self.http_version = parts
         # self.methodpathversion = request_line
@@ -47,13 +50,15 @@ class HTTPRequestParser:
                 # Ensure header lines contain a colon to be valid
                 if ":" not in line:
                     print(f"Warning: Skipping malformed header line: '{line}'")
-                    continue # Skip this line as it's not a valid header
+                    continue  # Skip this line as it's not a valid header
                 header_lines.append(line)
 
         for header in header_lines:
             # Use split(":", 1) to handle cases where header values might contain colons
-            key, value = header.split(":", 1) 
-            self.headers[key.strip().lower()] = value.strip() # Convert header keys to lowercase for consistency
+            key, value = header.split(":", 1)
+            self.headers[key.strip().lower()] = (
+                value.strip()
+            )  # Convert header keys to lowercase for consistency
 
         self.body = "\r\n".join(body_lines)
 
