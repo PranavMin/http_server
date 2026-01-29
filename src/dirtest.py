@@ -1,4 +1,4 @@
-import sydirectorys
+import sys
 
 
 from pathlib import Path
