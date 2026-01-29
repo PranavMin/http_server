@@ -54,9 +54,9 @@ class Server:
                     raw_data = client_sock.recv(1024)
                     if not raw_data:
                         break
-                    data += raw_data.decode("utf-8", errors="ignore")
-                    print(f"data = {data}")
+                    data = raw_data.decode("utf-8", errors="ignore")
 
+                    print(f"got data: ********** \n {data}\n*************")
                     try:
                         http_request = HTTPRequest(data)
                         response = http_response_handler(
@@ -78,7 +78,6 @@ class Server:
     def get_file_contents(self, relative_path: Path):
         absolute_path = Path(self.root_dir, relative_path)
         print(f"get_file_contents called with path: {absolute_path}")
-        print(f"servable_files: {self.servable_files}")
 
         # Handle root request
         if relative_path == "" or relative_path == "/":
