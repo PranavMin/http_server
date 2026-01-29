@@ -79,7 +79,7 @@ not_found_content = (
 def http_response_handler(http_request, get_file_contents):
     response = HttpResponse().set_protocol("HTTP/1.1")
     if http_request.method == "GET":
-        path = Path(http_request.path[1:])
+        path = http_request.path[1:]
         try:
             contents = get_file_contents(path)
         except FileNotFoundError:
