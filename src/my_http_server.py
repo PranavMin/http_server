@@ -1,11 +1,9 @@
 import socket
+import sys
 from pathlib import Path
 
 from http_request_parser import HTTPRequest
 from http_response_handler import HttpResponse, http_response_handler
-
-# from http_request_parser import HTTPRequest
-# from http_response_handler import HTTPResponseHandler
 
 
 def get_default_response(numcalls):
@@ -39,9 +37,19 @@ class Server:
         print(f"starting http-server on {self.host}:{self.port}")
 
     def start_server(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
             server_socket.bind((self.host, self.port))
             self.server_loop(server_socket)
+        except KeyboardInterrupt:
+            print("\nKeyboardInterrupt received. Closing socket gracefully.")
+        except socket.error as e:
+            print(f"Server socket error occurred: {e}")
+        finally:
+            if server_socket:
+                print("Closing socket.")
+                server_socket.close()
+        sys.exit(0)
 
     def server_loop(self, server_socket):
         while True:
